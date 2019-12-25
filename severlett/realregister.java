@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import utils.JdbcUtils;
+import utils.OftenUse;
 import bean.AdminBean;
 /**
  * Servlet implementation class realregister
@@ -34,6 +35,7 @@ public class realregister extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		response.setContentType("text/html; charset=utf-8");
+		String newtoken = OftenUse.getRandomString(10);
 		String[] values = { request.getParameter("un") };
 		try 
 		{
@@ -41,7 +43,8 @@ public class realregister extends HttpServlet {
 			String isforget = ((AdminBean)obj.get(0)).getIsforget();
 			if(isforget != null && isforget.equals(request.getParameter("token")))
 			{
-				JdbcUtils.executenoquery("update admin_ set active = 1 where username = ?", values);
+				String[] values1 = { newtoken, request.getParameter("un") };
+				JdbcUtils.executenoquery("update admin_ set isforget = ?, active = 1 where username = ?", values1);
 				Cookie c = new Cookie("msg", "¼¤»î³É¹¦");
 				Cookie user = new Cookie("user", request.getParameter("un"));
 				c.setMaxAge(5);

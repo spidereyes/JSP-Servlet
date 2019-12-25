@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,23 +42,49 @@ public class modifypwd extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
+		response.setContentType("text/html; charset=utf-8");
 		String username = request.getParameter("username");
-		String password = request.getParameter("password");
+		String oldpassword = request.getParameter("opassword");
+		String newpassword = request.getParameter("npassword");
 		String confirmpwd = request.getParameter("cpassword");
 		AdminBean ab = new AdminBean();
 		ab.setUsername(username);
-		ab.setPassword(password);
-		if("OK".equals(ab.BeanCheck()) && password.equals(confirmpwd))
+		ab.setPassword(newpassword);
+		if("OK".equals(ab.BeanCheck()) && newpassword.equals(confirmpwd))
 		{
 			String[] values = { username };
 			try 
 			{
-				ArrayListJdbcUtils.executequery("select password from admin_ where username = ?", AdminBean.class, values);
-				
-			} catch (SQLException e) {
+				ArrayList abs = JdbcUtils.executequery("select password from admin_ where username = ?", AdminBean.class, values);
+				String pwd = ((AdminBean) abs.get(0)).getPassword();
+				if(oldpassword.equals(pwd))
+				{
+					String[] values1 = { newpassword, username };
+					JdbcUtils.executenoquery("update admin_ set password = ? where username = ?", values1);
+					Cookie msg = new Cookie("msg", "修改成功");
+					msg.setMaxAge(5);
+					Cookie defaultusername = new Cookie("user", username);
+					defaultusername.setMaxAge(5);
+					response.addCookie(msg);
+					response.addCookie(defaultusername);
+					response.sendRedirect("http://"+request.getServerName()+":"+request.getServerPort()+request.getContextPath()+"/login");
+				}
+				else 
+				{
+					request.setAttribute("msg", "您的账号或密码有误");
+					request.getRequestDispatcher("WEB-INF/Modifypwd.jsp").include(request, response);
+				}
+			} catch (Exception e) {
+				request.setAttribute("msg", "您的账号有误");
+				request.getRequestDispatcher("WEB-INF/Modifypwd.jsp").include(request, response);
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		else
+		{
+			request.setAttribute("msg", "请按正确格式输入内容");
+			request.getRequestDispatcher("WEB-INF/Modifypwd.jsp").include(request, response);
 		}
 	}
 
